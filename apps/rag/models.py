@@ -3,6 +3,7 @@ Models for RAG application
 """
 from django.db import models
 from django.utils import timezone
+from django.conf import settings
 import json
 
 
@@ -115,14 +116,14 @@ class ChatMessage(models.Model):
 class RAGConfig(models.Model):
     """Store RAG configuration per project"""
     project = models.OneToOneField(Project, on_delete=models.CASCADE, related_name='rag_config')
-    temperature = models.FloatField(default=0.3)
-    top_p = models.FloatField(default=0.9)
-    max_context_tokens = models.IntegerField(default=4096)
-    chunk_size = models.IntegerField(default=1000)
-    chunk_overlap = models.IntegerField(default=100)
-    similarity_threshold = models.FloatField(default=0.25)
-    auto_sync_enabled = models.BooleanField(default=True)
-    sync_interval_minutes = models.IntegerField(default=5)
+    temperature = models.FloatField(default=lambda: settings.RAG_CONFIG.get('TEMPERATURE', 0.3))
+    top_p = models.FloatField(default=lambda: settings.RAG_CONFIG.get('TOP_P', 0.9))
+    max_context_tokens = models.IntegerField(default=lambda: settings.RAG_CONFIG.get('MAX_CONTEXT_LENGTH', 4096))
+    chunk_size = models.IntegerField(default=lambda: settings.RAG_CONFIG.get('CHUNK_SIZE', 1000))
+    chunk_overlap = models.IntegerField(default=lambda: settings.RAG_CONFIG.get('CHUNK_OVERLAP', 100))
+    similarity_threshold = models.FloatField(default=lambda: settings.RAG_CONFIG.get('SIMILARITY_THRESHOLD', 0.25))
+    auto_sync_enabled = models.BooleanField(default=lambda: settings.AUTO_SYNC_ENABLED)
+    sync_interval_minutes = models.IntegerField(default=lambda: settings.SYNC_INTERVAL_MINUTES)
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
 

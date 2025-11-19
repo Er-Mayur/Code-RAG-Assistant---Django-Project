@@ -3,13 +3,17 @@ Django settings for RAG project
 """
 import os
 from pathlib import Path
+from dotenv import load_dotenv
 
 BASE_DIR = Path(__file__).resolve().parent.parent
 
-SECRET_KEY = 'your-secret-key-change-this-in-production-123456789'
+# Load environment variables
+load_dotenv(os.path.join(BASE_DIR, '.env'))
 
-DEBUG = True
-ALLOWED_HOSTS = ['*']
+SECRET_KEY = os.getenv('SECRET_KEY', 'your-secret-key-change-this-in-production-123456789')
+
+DEBUG = os.getenv('DEBUG', 'True').lower() in ('true', '1', 'yes')
+ALLOWED_HOSTS = os.getenv('ALLOWED_HOSTS', '*').split(',')
 
 INSTALLED_APPS = [
     'daphne',
@@ -90,24 +94,22 @@ REST_FRAMEWORK = {
     'DEFAULT_FILTER_BACKENDS': ['rest_framework.filters.SearchFilter'],
 }
 
-CORS_ALLOWED_ORIGINS = [
-    'http://localhost:3000',
-    'http://localhost:8000',
-    'http://127.0.0.1:8000',
-]
+CORS_ALLOWED_ORIGINS = os.getenv('CORS_ALLOWED_ORIGINS', 'http://localhost:8000,http://localhost:3000').split(',')
+CSRF_TRUSTED_ORIGINS = os.getenv('CSRF_TRUSTED_ORIGINS', 'http://localhost:8000,http://localhost:3000').split(',')
 
 # RAG Configuration
 RAG_CONFIG = {
-    'OLLAMA_BASE_URL': 'http://localhost:11434',
-    'MODEL_NAME': 'deepseek-coder:6.7b',
-    'EMBEDDING_MODEL': 'nomic-embed-text',
-    'CHUNK_SIZE': 1000,
-    'CHUNK_OVERLAP': 100,
+    'OLLAMA_BASE_URL': os.getenv('OLLAMA_BASE_URL', 'http://localhost:11434'),
+    'MODEL_NAME': os.getenv('OLLAMA_MODEL', 'deepseek-coder:6.7b'),
+    'EMBEDDING_MODEL': os.getenv('OLLAMA_EMBEDDING_MODEL', 'nomic-embed-text'),
+    'CHUNK_SIZE': int(os.getenv('RAG_CHUNK_SIZE', '1000')),
+    'CHUNK_OVERLAP': int(os.getenv('RAG_CHUNK_OVERLAP', '100')),
     'VECTOR_DB_PATH': os.path.join(BASE_DIR, 'vector_stores'),
     'TEMP_FILES_PATH': os.path.join(BASE_DIR, 'temp_files'),
     'MAX_CONTEXT_LENGTH': 4096,
-    'TEMPERATURE': 0.3,
-    'TOP_P': 0.9,
+    'TEMPERATURE': float(os.getenv('RAG_TEMPERATURE', '0.3')),
+    'TOP_P': float(os.getenv('RAG_TOP_P', '0.9')),
+    'SIMILARITY_THRESHOLD': float(os.getenv('RAG_SIMILARITY_THRESHOLD', '0.5')),
 }
 
 # File watching
@@ -130,6 +132,8 @@ EXCLUDED_EXTENSIONS = [
 FILE_WATCH_EXTENSIONS = None  # None means allow all except EXCLUDED_EXTENSIONS
 MAX_FILES_PER_PROJECT = 1000
 MAX_FILE_SIZE_MB = 10
+AUTO_SYNC_ENABLED = os.getenv('AUTO_SYNC_ENABLED', 'True').lower() in ('true', '1', 'yes')
+SYNC_INTERVAL_MINUTES = int(os.getenv('SYNC_INTERVAL_MINUTES', '5'))
 
 # Logging
 LOGGING = {
