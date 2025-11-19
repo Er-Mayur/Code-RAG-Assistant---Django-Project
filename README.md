@@ -95,11 +95,7 @@ python manage.py createsuperuser
 
 ```bash
 # With ASGI (for WebSocket support)
-python manage.py runserver 0.0.0.0:8000
-
-# Or use Daphne directly for better WebSocket support:
-daphne -b 0.0.0.0 -p 8000 config.asgi:application
-```
+python manage.py runserver
 
 ### 6. Access the Application
 
@@ -261,89 +257,3 @@ ollama serve
 # Pull model if needed:
 ollama pull deepseek-coder:6.7b
 ```
-
-### WebSocket Connection Issues
-- Ensure you're using `daphne` for WebSocket support
-- Check browser console for errors
-- Falls back to HTTP polling if WebSocket fails
-
-### Files Not Indexing
-1. Check file paths are correct
-2. Ensure files have allowed extensions
-3. Check file size limits (default 10MB)
-4. Look at Django logs for errors
-
-### Slow Response
-- Reduce `CHUNK_SIZE` for faster processing
-- Reduce number of context chunks used
-- Ensure Ollama server is running locally
-- Check available RAM/CPU
-
-## Advanced Features (Future Enhancement)
-
-These can be added to extend functionality:
-
-1. **Embedding Storage**: Use ChromaDB/Weaviate for persistent embeddings
-2. **Advanced RAG**: Implement hybrid search (BM25 + semantic)
-3. **Multi-Language Support**: Add support for more programming languages
-4. **Code Execution**: Safe sandbox for running code suggestions
-5. **Integration**: GitHub/GitLab integration for auto-sync
-6. **Cloud Deployment**: Docker + cloud hosting setup
-7. **Team Collaboration**: Multi-user support with access control
-8. **Custom Models**: Support for different Ollama models
-
-## Performance Tips
-
-1. **Batch Indexing**: Index in background for large projects
-2. **Caching**: Implement Redis caching for frequent queries
-3. **Async Tasks**: Use Celery for background file watching
-4. **Database Indexing**: Add database indices for frequently queried columns
-5. **Vector Caching**: Cache embeddings in ChromaDB
-
-## Deployment
-
-### Docker Setup (Optional)
-Create `Dockerfile`:
-```dockerfile
-FROM python:3.11-slim
-
-WORKDIR /app
-COPY requirements.txt .
-RUN pip install -r requirements.txt
-
-COPY . .
-CMD ["daphne", "-b", "0.0.0.0", "-p", "8000", "config.asgi:application"]
-```
-
-Build and run:
-```bash
-docker build -t rag-assistant .
-docker run -p 8000:8000 -v /path/to/projects:/projects rag-assistant
-```
-
-## License
-
-MIT License - Feel free to use and modify!
-
-## Support
-
-For issues or questions:
-1. Check Django/DRF documentation
-2. Review Ollama documentation
-3. Check browser console for frontend errors
-4. Enable DEBUG=True in settings for detailed errors
-
-## Contributing
-
-Contributions welcome! Areas for improvement:
-- Better embedding/vector search
-- Multi-language syntax highlighting
-- Real-time file watching with watchdog
-- Performance optimizations
-- UI/UX enhancements
-
----
-
-**Happy coding! 🚀**
-
-For latest updates and features, check the repository README.
