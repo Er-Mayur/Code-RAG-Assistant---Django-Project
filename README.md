@@ -14,6 +14,22 @@ A personalized AI-powered code assistant that uses **Retrieval-Augmented Generat
 - **Offline Processing**: Everything runs locally with Ollama - no cloud data sent
 - **Beautiful Dashboard**: Modern, responsive UI inspired by ChatGPT
 
+## 🖼️ UI Screenshots
+
+### ➕ Add New Project Modal
+![Add Project Screenshot](attachment:/mnt/data/Screenshot 2025-11-19 at 6.25.26 PM.png)
+
+---
+
+### 📁 Project Overview Page  
+![Project Overview Screenshot](attachment:/mnt/data/Screenshot 2025-11-19 at 6.27.29 PM.png)
+
+---
+
+### 💬 Chat Interface  
+![Chat Interface Screenshot](attachment:/mnt/data/Screenshot 2025-11-19 at 6.28.27 PM.png)
+
+
 ## Tech Stack
 
 - **Backend**: Django 4.2 + Django REST Framework + Channels (WebSockets)
