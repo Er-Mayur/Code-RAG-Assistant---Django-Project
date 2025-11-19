@@ -7,6 +7,35 @@ from django.conf import settings
 import json
 
 
+# ---------- FIX LAMBDA DEFAULTS (Django cannot serialize lambdas) ---------- #
+
+def get_default_temperature():
+    return settings.RAG_CONFIG.get('TEMPERATURE', 0.3)
+
+def get_default_top_p():
+    return settings.RAG_CONFIG.get('TOP_P', 0.9)
+
+def get_default_max_context_tokens():
+    return settings.RAG_CONFIG.get('MAX_CONTEXT_LENGTH', 4096)
+
+def get_default_chunk_size():
+    return settings.RAG_CONFIG.get('CHUNK_SIZE', 1000)
+
+def get_default_chunk_overlap():
+    return settings.RAG_CONFIG.get('CHUNK_OVERLAP', 100)
+
+def get_default_similarity_threshold():
+    return settings.RAG_CONFIG.get('SIMILARITY_THRESHOLD', 0.25)
+
+def get_default_auto_sync_enabled():
+    return settings.AUTO_SYNC_ENABLED
+
+def get_default_sync_interval():
+    return settings.SYNC_INTERVAL_MINUTES
+
+
+# ---------------------------- MODELS START ---------------------------- #
+
 class Project(models.Model):
     """Project model to store user projects"""
     name = models.CharField(max_length=255)
@@ -53,7 +82,7 @@ class TextChunk(models.Model):
     content = models.TextField()
     start_line = models.IntegerField(null=True, blank=True)
     end_line = models.IntegerField(null=True, blank=True)
-    embedding_vector = models.JSONField(null=True, blank=True)  # Store embedding
+    embedding_vector = models.JSONField(null=True, blank=True)
     created_at = models.DateTimeField(auto_now_add=True)
 
     class Meta:
@@ -81,7 +110,6 @@ class ChatSession(models.Model):
 
     def save(self, *args, **kwargs):
         if not self.title and self.chat_messages.exists():
-            # Auto-generate title from first message
             first_msg = self.chat_messages.first()
             self.title = first_msg.user_message[:50] + "..."
         super().save(*args, **kwargs)
@@ -98,8 +126,8 @@ class ChatMessage(models.Model):
     session = models.ForeignKey(ChatSession, on_delete=models.CASCADE, related_name='chat_messages')
     user_message = models.TextField()
     assistant_response = models.TextField(blank=True, null=True)
-    context_files = models.JSONField(default=list, blank=True)  # List of file paths used
-    context_chunks = models.JSONField(default=list, blank=True)  # Relevant chunks
+    context_files = models.JSONField(default=list, blank=True)
+    context_chunks = models.JSONField(default=list, blank=True)
     created_at = models.DateTimeField(auto_now_add=True)
     response_time_ms = models.IntegerField(null=True, blank=True)
     tokens_used = models.JSONField(default=dict, blank=True)
@@ -116,14 +144,16 @@ class ChatMessage(models.Model):
 class RAGConfig(models.Model):
     """Store RAG configuration per project"""
     project = models.OneToOneField(Project, on_delete=models.CASCADE, related_name='rag_config')
-    temperature = models.FloatField(default=lambda: settings.RAG_CONFIG.get('TEMPERATURE', 0.3))
-    top_p = models.FloatField(default=lambda: settings.RAG_CONFIG.get('TOP_P', 0.9))
-    max_context_tokens = models.IntegerField(default=lambda: settings.RAG_CONFIG.get('MAX_CONTEXT_LENGTH', 4096))
-    chunk_size = models.IntegerField(default=lambda: settings.RAG_CONFIG.get('CHUNK_SIZE', 1000))
-    chunk_overlap = models.IntegerField(default=lambda: settings.RAG_CONFIG.get('CHUNK_OVERLAP', 100))
-    similarity_threshold = models.FloatField(default=lambda: settings.RAG_CONFIG.get('SIMILARITY_THRESHOLD', 0.25))
-    auto_sync_enabled = models.BooleanField(default=lambda: settings.AUTO_SYNC_ENABLED)
-    sync_interval_minutes = models.IntegerField(default=lambda: settings.SYNC_INTERVAL_MINUTES)
+
+    temperature = models.FloatField(default=get_default_temperature)
+    top_p = models.FloatField(default=get_default_top_p)
+    max_context_tokens = models.IntegerField(default=get_default_max_context_tokens)
+    chunk_size = models.IntegerField(default=get_default_chunk_size)
+    chunk_overlap = models.IntegerField(default=get_default_chunk_overlap)
+    similarity_threshold = models.FloatField(default=get_default_similarity_threshold)
+    auto_sync_enabled = models.BooleanField(default=get_default_auto_sync_enabled)
+    sync_interval_minutes = models.IntegerField(default=get_default_sync_interval)
+
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
 

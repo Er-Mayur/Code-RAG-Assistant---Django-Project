@@ -131,18 +131,18 @@ RAGProject/
 │   ├── urls.py                     # URL routing
 │   ├── asgi.py                     # ASGI configuration
 │   └── wsgi.py                     # WSGI configuration
-├── apps/
-│   └── rag/                        # Main RAG application
-│       ├── models.py               # Database models
-│       ├── views.py                # Frontend views
-│       ├── views_api.py            # REST API views
-│       ├── serializers.py          # DRF serializers
-│       ├── consumers.py            # WebSocket consumers
-│       ├── routing.py              # WebSocket routing
-│       ├── urls.py                 # API URLs
-│       ├── rag_utils.py            # File scanning & chunking
-│       ├── ollama_service.py       # Ollama integration
-│       └── migrations/             # Database migrations
+├── app/                            # Main RAG application
+│   ├── models.py                   # Database models
+│   ├── views.py                    # Frontend views
+│   ├── views_api.py                # REST API views
+│   ├── serializers.py              # DRF serializers
+│   ├── consumers.py                # WebSocket consumers
+│   ├── routing.py                  # WebSocket routing
+│   ├── urls.py                     # API URLs
+│   ├── rag_utils.py                # File scanning & chunking
+│   ├── ollama_service.py           # Ollama integration
+│   └── migrations/                 # Database migrations
+|
 ├── templates/                      # HTML templates
 │   ├── base.html                   # Base template
 │   ├── index.html                  # Projects page

@@ -5,11 +5,11 @@ from django.contrib import admin
 from django.urls import path, include
 from django.conf import settings
 from django.conf.urls.static import static
-from apps.rag.views import urlpatterns as rag_view_patterns
+from app.views import urlpatterns as rag_view_patterns
 
 urlpatterns = [
     path('admin/', admin.site.urls),
-    path('api/', include('apps.rag.urls')),
+    path('api/', include('app.urls')),
 ] + rag_view_patterns
 
 if settings.DEBUG:
