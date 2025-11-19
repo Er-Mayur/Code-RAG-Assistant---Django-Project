@@ -17,17 +17,19 @@ A personalized AI-powered code assistant that uses **Retrieval-Augmented Generat
 ## 🖼️ UI Screenshots
 
 ### ➕ Add New Project Modal
-![Add Project Screenshot](attachment:/mnt/data/Screenshot 2025-11-19 at 6.25.26 PM.png)
+<img width="1470" height="956" alt="Screenshot 2025-11-19 at 6 25 26 PM" src="https://github.com/user-attachments/assets/6ff11a31-d34b-4332-a214-75fe0c101533" />
+
 
 ---
 
 ### 📁 Project Overview Page  
-![Project Overview Screenshot](attachment:/mnt/data/Screenshot 2025-11-19 at 6.27.29 PM.png)
+<img width="1470" height="956" alt="Screenshot 2025-11-19 at 6 27 29 PM" src="https://github.com/user-attachments/assets/805319b0-15ec-4165-b653-ecb74356f62c" />
+
 
 ---
 
 ### 💬 Chat Interface  
-![Chat Interface Screenshot](attachment:/mnt/data/Screenshot 2025-11-19 at 6.28.27 PM.png)
+<img width="2940" height="1912" alt="Screenshot 2025-11-19 at 6 28 27 PM" src="https://github.com/user-attachments/assets/fefbaa1e-16a8-45ea-916b-9c807625458f" />
 
 
 ## Tech Stack
