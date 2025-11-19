@@ -1,0 +1,182 @@
+{% extends 'base.html' %}
+
+{% block title %}Code RAG - Projects{% endblock %}
+
+{% block header_title %}
+    My Projects
+{% endblock %}
+
+{% block header_actions %}
+    <button class="btn btn-primary" onclick="showNewProjectModal()">+ Add Project</button>
+{% endblock %}
+
+{% block content %}
+<div style="max-width: 1200px;">
+    {% if projects %}
+        <div style="display: grid; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); gap: 16px;">
+            {% for project in projects %}
+                <div class="project-card" style="background: var(--bg-light); border-radius: 8px; padding: 16px; cursor: pointer; transition: all 0.2s; border: 1px solid var(--border);">
+                    <div style="display: flex; align-items: flex-start; justify-content: space-between; margin-bottom: 12px; gap: 12px;">
+                        <div style="flex: 1; cursor: pointer; min-width: 0;" onclick="navigateToProject('{{ project.id }}')" data-project-id="{{ project.id }}">
+                            <h3 style="font-size: 16px; font-weight: 600; margin-bottom: 4px;">{{ project.name }}</h3>
+                            <p style="font-size: 12px; color: var(--text-secondary); white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">{{ project.folder_path }}</p>
+                        </div>
+                        <button class="btn btn-secondary" style="padding: 6px 10px; font-size: 12px; background: #c23b22; border: none; color: white; border-radius: 4px; cursor: pointer; flex-shrink: 0; white-space: nowrap;" onclick="deleteProject(event)" title="Delete project" data-project-id="{{ project.id }}" data-project-name="{{ project.name }}">🗑️ Delete</button>
+                    </div>
+                    <p style="font-size: 13px; color: var(--text-secondary); margin-bottom: 12px; line-height: 1.4;">{{ project.description }}</p>
+                    <div style="display: flex; gap: 16px; font-size: 12px; color: var(--text-secondary); padding-top: 12px; border-top: 1px solid var(--border);">
+                        <div>
+                            <div style="font-weight: 500; color: var(--text-primary);">{{ project.total_files }}</div>
+                            <div>Files</div>
+                        </div>
+                        <div>
+                            <div style="font-weight: 500; color: var(--text-primary);">{{ project.chat_sessions.count }}</div>
+                            <div>Chats</div>
+                        </div>
+                        <div style="margin-left: auto;">
+                            <div style="font-weight: 500; color: var(--text-secondary);">{{ project.updated_at|date:'M d' }}</div>
+                        </div>
+                    </div>
+                </div>
+            {% endfor %}
+        </div>
+    {% else %}
+        <div class="empty-state">
+            <div class="empty-icon">📁</div>
+            <h2 style="font-size: 20px; color: var(--text-primary); margin-bottom: 8px;">No projects yet</h2>
+            <p>Add your first project to get started with Code RAG</p>
+            <button class="btn btn-primary" style="margin-top: 20px;" onclick="showNewProjectModal()">+ Add Project</button>
+        </div>
+    {% endif %}
+</div>
+
+<div id="projectModal" style="display: none; position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0, 0, 0, 0.7); display: flex; align-items: center; justify-content: center; z-index: 1000;">
+    <div style="background: var(--bg-lighter); border-radius: 8px; padding: 24px; width: 90%; max-width: 500px; border: 1px solid var(--border);">
+        <h2 style="font-size: 18px; font-weight: 600; margin-bottom: 16px;">Add New Project</h2>
+        <form onsubmit="createProject(event)" id="projectForm">
+            <div style="margin-bottom: 16px;">
+                <label style="display: block; margin-bottom: 8px; font-weight: 500;">Project Name</label>
+                <input type="text" id="projectName" placeholder="e.g., My Web App" style="width: 100%; padding: 10px 12px; background: var(--bg-light); border: 1px solid var(--border); border-radius: 6px; color: var(--text-primary);" required>
+            </div>
+            <div style="margin-bottom: 16px;">
+                <label style="display: block; margin-bottom: 8px; font-weight: 500;">Folder Path</label>
+                <input type="text" id="folderPath" placeholder="e.g., /Users/username/projects/my-app" style="width: 100%; padding: 10px 12px; background: var(--bg-light); border: 1px solid var(--border); border-radius: 6px; color: var(--text-primary);" required>
+                <p style="font-size: 12px; color: var(--text-secondary); margin-top: 4px;">Enter the absolute path to your project folder</p>
+            </div>
+            <div style="margin-bottom: 20px;">
+                <label style="display: block; margin-bottom: 8px; font-weight: 500;">Description (Optional)</label>
+                <textarea id="projectDesc" placeholder="What is this project about?" style="width: 100%; padding: 10px 12px; background: var(--bg-light); border: 1px solid var(--border); border-radius: 6px; color: var(--text-primary); resize: vertical; height: 80px;"></textarea>
+            </div>
+            <div style="display: flex; gap: 10px;">
+                <button type="button" class="btn btn-secondary" onclick="closeProjectModal()" style="flex: 1;">Cancel</button>
+                <button type="submit" class="btn btn-primary" style="flex: 1;" id="createBtn">Create Project</button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<script>
+function navigateToProject(projectId) {
+    window.location.href = '/project/' + projectId + '/';
+}
+
+function showNewProjectModal() {
+    document.getElementById('projectModal').style.display = 'flex';
+}
+
+function closeProjectModal() {
+    document.getElementById('projectModal').style.display = 'none';
+    document.getElementById('projectForm').reset();
+}
+
+// Auto-show add project form if no projects exist
+document.addEventListener('DOMContentLoaded', function() {
+    const emptyState = document.querySelector('.empty-state');
+    if (emptyState) {
+        document.getElementById('projectModal').style.display = 'flex';
+    }
+});
+
+function createProject(event) {
+    event.preventDefault();
+    const createBtn = document.getElementById('createBtn');
+    createBtn.disabled = true;
+    createBtn.textContent = 'Creating...';
+
+    const name = document.getElementById('projectName').value;
+    const folderPath = document.getElementById('folderPath').value;
+    const description = document.getElementById('projectDesc').value;
+
+    fetch('/api/projects/create_project/', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+            name: name,
+            folder_path: folderPath,
+            description: description
+        })
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.chat_session_id) {
+            closeProjectModal();
+            // Redirect to chat session instead of reloading
+            window.location.href = '/chat/' + data.chat_session_id + '/';
+        } else if (data.error) {
+            alert('Error: ' + data.error);
+            createBtn.disabled = false;
+            createBtn.textContent = 'Create Project';
+        }
+    })
+    .catch(error => {
+        alert('Error creating project: ' + error);
+        createBtn.disabled = false;
+        createBtn.textContent = 'Create Project';
+    });
+}
+
+// Close modal when clicking outside
+document.getElementById('projectModal').addEventListener('click', function(e) {
+    if (e.target === this) {
+        closeProjectModal();
+    }
+});
+
+function deleteProject(event) {
+    event.stopPropagation();
+    const btn = event.target.closest('button');
+    const projectId = btn.getAttribute('data-project-id');
+    const projectName = btn.getAttribute('data-project-name');
+    
+    if (confirm(`Are you sure you want to delete "${projectName}"?\n\nThis will delete the project and all associated chat sessions and data. This action cannot be undone.`)) {
+        btn.disabled = true;
+        btn.textContent = '⏳ Deleting...';
+
+        fetch(`/api/projects/${projectId}/delete_project/`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            }
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                alert('Project deleted successfully!');
+                window.location.reload();
+            } else if (data.error) {
+                alert('Error: ' + data.error);
+                btn.disabled = false;
+                btn.textContent = '🗑️ Delete';
+            }
+        })
+        .catch(error => {
+            alert('Error deleting project: ' + error);
+            btn.disabled = false;
+            btn.textContent = '🗑️ Delete';
+        });
+    }
+}
+</script>
+{% endblock %}

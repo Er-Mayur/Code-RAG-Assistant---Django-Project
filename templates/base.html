@@ -1,0 +1,759 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{% block title %}Code RAG Assistant{% endblock %}</title>
+    <style>
+        :root {
+            --primary: #10a37f;
+            --primary-dark: #0d8f6f;
+            --bg-dark: #0d0d0d;
+            --bg-lighter: #1a1a1a;
+            --bg-light: #2d2d2d;
+            --text-primary: #ececec;
+            --text-secondary: #9ca3af;
+            --border: #404040;
+            --success: #10a37f;
+            --error: #ff6b6b;
+            --warning: #ffa500;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', sans-serif;
+            background: var(--bg-dark);
+            color: var(--text-primary);
+            line-height: 1.6;
+        }
+
+        .container {
+            display: flex;
+            height: 100vh;
+            overflow: hidden;
+        }
+
+        .sidebar {
+            width: 260px;
+            background: var(--bg-lighter);
+            border-right: 1px solid var(--border);
+            display: flex;
+            flex-direction: column;
+            overflow-y: auto;
+            overflow-x: hidden;
+        }
+
+        .sidebar-header {
+            padding: 20px;
+            border-bottom: 1px solid var(--border);
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .logo {
+            width: 32px;
+            height: 32px;
+            background: var(--primary);
+            border-radius: 6px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: bold;
+            font-size: 18px;
+        }
+
+        .sidebar-title {
+            font-size: 14px;
+            font-weight: 600;
+            color: var(--text-primary);
+        }
+
+        .sidebar-content {
+            flex: 1;
+            overflow-y: auto;
+            padding: 15px;
+        }
+
+        .new-chat-btn {
+            width: 100%;
+            padding: 12px;
+            background: var(--primary);
+            color: white;
+            border: none;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 14px;
+            font-weight: 500;
+            margin-bottom: 15px;
+            transition: background 0.2s;
+        }
+
+        .new-chat-btn:hover {
+            background: var(--primary-dark);
+        }
+
+        .project-item {
+            padding: 12px;
+            margin-bottom: 8px;
+            background: var(--bg-light);
+            border-radius: 6px;
+            cursor: pointer;
+            transition: background 0.2s;
+            border-left: 3px solid transparent;
+            font-size: 13px;
+        }
+
+        .project-item:hover {
+            background: #3d3d3d;
+        }
+
+        .project-item.active {
+            background: var(--bg-light);
+            border-left-color: var(--primary);
+            color: var(--primary);
+        }
+
+        .project-name {
+            font-weight: 500;
+            margin-bottom: 4px;
+        }
+
+        .project-meta {
+            font-size: 11px;
+            color: var(--text-secondary);
+        }
+
+        .main-content {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            background: var(--bg-dark);
+            overflow: hidden;
+        }
+
+        .header {
+            padding: 16px 24px;
+            border-bottom: 1px solid var(--border);
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            background: var(--bg-lighter);
+        }
+
+        .header-title {
+            font-size: 18px;
+            font-weight: 600;
+        }
+
+        .header-actions {
+            display: flex;
+            gap: 10px;
+        }
+
+        .btn {
+            padding: 8px 16px;
+            border: none;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 13px;
+            font-weight: 500;
+            transition: all 0.2s;
+        }
+
+        .btn-primary {
+            background: var(--primary);
+            color: white;
+        }
+
+        .btn-primary:hover {
+            background: var(--primary-dark);
+        }
+
+        .btn-secondary {
+            background: var(--bg-light);
+            color: var(--text-primary);
+            border: 1px solid var(--border);
+        }
+
+        .btn-secondary:hover {
+            background: #3d3d3d;
+        }
+
+        .content-area {
+            flex: 1;
+            overflow-y: auto;
+            padding: 24px;
+        }
+
+        .messages-container {
+            display: flex;
+            flex-direction: column;
+            gap: 16px;
+            max-width: 900px;
+        }
+
+        .message {
+            display: flex;
+            gap: 12px;
+            animation: slideIn 0.3s ease-out;
+        }
+
+        @keyframes slideIn {
+            from {
+                opacity: 0;
+                transform: translateY(10px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .message-avatar {
+            width: 32px;
+            height: 32px;
+            border-radius: 6px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: bold;
+            flex-shrink: 0;
+            font-size: 14px;
+        }
+
+        .message-user .message-avatar {
+            background: var(--primary);
+            color: white;
+        }
+
+        .message-assistant .message-avatar {
+            background: var(--bg-light);
+            color: var(--primary);
+        }
+
+        .message-content {
+            flex: 1;
+            background: var(--bg-light);
+            padding: 16px;
+            border-radius: 8px;
+            line-height: 1.5;
+        }
+
+        .message-assistant .message-content {
+            background: var(--bg-light);
+            border-left: 3px solid var(--primary);
+        }
+
+        .message-user .message-content {
+            background: var(--primary);
+            color: white;
+        }
+
+        .message-meta {
+            font-size: 12px;
+            color: var(--text-secondary);
+            margin-top: 8px;
+        }
+
+        .code-block {
+            background: #0d0d0d;
+            border: 1px solid var(--border);
+            border-radius: 6px;
+            padding: 12px;
+            overflow-x: auto;
+            margin: 12px 0;
+        }
+
+        .code-block code {
+            color: #d4d4d4;
+            font-family: 'Monaco', 'Courier New', monospace;
+            font-size: 13px;
+        }
+
+        .input-area {
+            padding: 24px;
+            border-top: 1px solid var(--border);
+            background: var(--bg-lighter);
+            display: flex;
+            gap: 12px;
+        }
+
+        .input-wrapper {
+            flex: 1;
+            display: flex;
+            gap: 8px;
+        }
+
+        .input-field {
+            flex: 1;
+            background: var(--bg-light);
+            border: 1px solid var(--border);
+            border-radius: 6px;
+            padding: 12px 16px;
+            color: var(--text-primary);
+            font-size: 14px;
+            outline: none;
+            transition: border 0.2s;
+            resize: none;
+            max-height: 100px;
+        }
+
+        .input-field:focus {
+            border-color: var(--primary);
+        }
+
+        .input-field::placeholder {
+            color: var(--text-secondary);
+        }
+
+        .send-btn {
+            background: var(--primary);
+            color: white;
+            border: none;
+            border-radius: 6px;
+            width: 36px;
+            height: 36px;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: background 0.2s;
+            flex-shrink: 0;
+        }
+
+        .send-btn:hover:not(:disabled) {
+            background: var(--primary-dark);
+        }
+
+        .send-btn:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+
+        .loading {
+            display: flex;
+            gap: 6px;
+            align-items: center;
+        }
+
+        .loading-dot {
+            width: 8px;
+            height: 8px;
+            background: var(--primary);
+            border-radius: 50%;
+            animation: loading 1.4s infinite;
+        }
+
+        .loading-dot:nth-child(2) {
+            animation-delay: 0.2s;
+        }
+
+        .loading-dot:nth-child(3) {
+            animation-delay: 0.4s;
+        }
+
+        @keyframes loading {
+            0%, 80%, 100% {
+                opacity: 0.3;
+            }
+            40% {
+                opacity: 1;
+            }
+        }
+
+        .empty-state {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            height: 100%;
+            color: var(--text-secondary);
+            text-align: center;
+        }
+
+        .empty-icon {
+            font-size: 48px;
+            margin-bottom: 16px;
+            opacity: 0.5;
+        }
+
+        .context-files {
+            font-size: 12px;
+            color: var(--text-secondary);
+            margin-top: 12px;
+            padding: 8px;
+            background: rgba(16, 163, 127, 0.1);
+            border-radius: 4px;
+            border-left: 2px solid var(--primary);
+        }
+
+        .file-tag {
+            display: inline-block;
+            background: var(--bg-light);
+            padding: 4px 8px;
+            border-radius: 4px;
+            margin: 4px 4px 4px 0;
+            font-size: 11px;
+        }
+
+        @media (max-width: 768px) {
+            .sidebar {
+                width: 200px;
+            }
+
+            .content-area {
+                padding: 16px;
+            }
+
+            .messages-container {
+                max-width: 100%;
+            }
+        }
+
+        @media (max-width: 640px) {
+            .container {
+                flex-direction: column;
+            }
+
+            .sidebar {
+                width: 100%;
+                height: 200px;
+                border-right: none;
+                border-bottom: 1px solid var(--border);
+            }
+
+            .sidebar-content {
+                max-height: 150px;
+            }
+
+            .main-content {
+                height: calc(100vh - 200px);
+            }
+        }
+
+        /* Scrollbar styling */
+        ::-webkit-scrollbar {
+            width: 8px;
+            height: 8px;
+        }
+
+        ::-webkit-scrollbar-track {
+            background: transparent;
+        }
+
+        ::-webkit-scrollbar-thumb {
+            background: var(--border);
+            border-radius: 4px;
+        }
+
+        ::-webkit-scrollbar-thumb:hover {
+            background: #555;
+        }
+    </style>
+    {% block extra_css %}{% endblock %}
+</head>
+<body>
+    <div class="container">
+        <div class="sidebar">
+            <div class="sidebar-header">
+                <a href="{% url 'index' %}" style="display: flex; align-items: center; gap: 10px; text-decoration: none; flex: 1;">
+                    <div class="logo">🧠</div>
+                    <div>
+                        <div class="sidebar-title">Code RAG</div>
+                    </div>
+                </a>
+            </div>
+            <div class="sidebar-content">
+                {% block sidebar %}
+                {% endblock %}
+            </div>
+        </div>
+        <div class="main-content">
+            <div class="header">
+                <div class="header-title">{% block header_title %}Code Assistant{% endblock %}</div>
+                <div class="header-actions">
+                    {% block header_actions %}{% endblock %}
+                </div>
+            </div>
+            <div class="content-area">
+                {% block content %}{% endblock %}
+            </div>
+            {% block input_area %}{% endblock %}
+        </div>
+    </div>
+
+    <script>
+        // WebSocket connection handler
+        let ws = null;
+
+        function connectWebSocket(sessionId) {
+            console.log('🔌 Connecting to WebSocket for session:', sessionId);
+            const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
+            const wsUrl = `${protocol}//${window.location.host}/ws/chat/${sessionId}/`;
+            console.log('WebSocket URL:', wsUrl);
+            
+            try {
+                ws = new WebSocket(wsUrl);
+                console.log('WebSocket object created');
+            } catch (e) {
+                console.error('❌ Error creating WebSocket:', e);
+                return;
+            }
+
+            ws.onopen = function(event) {
+                console.log('✅ WebSocket connection OPEN');
+            };
+
+            ws.onmessage = function(event) {
+                console.log('📨 WebSocket message received:', event.data);
+                try {
+                    const data = JSON.parse(event.data);
+                    handleWebSocketMessage(data);
+                } catch (e) {
+                    console.error('Error parsing WebSocket message:', e);
+                }
+            };
+
+            ws.onerror = function(event) {
+                console.error('❌ WebSocket ERROR:', event);
+                console.log('ws.readyState:', ws.readyState, '(0=CONNECTING, 1=OPEN, 2=CLOSING, 3=CLOSED)');
+            };
+
+            ws.onclose = function(event) {
+                console.log('❌ WebSocket connection CLOSED, code:', event.code, 'reason:', event.reason);
+                // Reconnect after 3 seconds
+                setTimeout(() => connectWebSocket(sessionId), 3000);
+            };
+        }
+
+        function handleWebSocketMessage(data) {
+            console.log('Handling WebSocket message:', data.type);
+            if (data.type === 'user_message') {
+                addMessageToUI(data.message, 'user');
+            } else if (data.type === 'ai_response') {
+                removeTinkingMessage();
+                addMessageToUI(data.response, 'assistant', data.context_files);
+            } else if (data.type === 'thinking') {
+                showThinking();
+            } else if (data.type === 'error') {
+                removeTinkingMessage();
+                addMessageToUI('Error: ' + data.message, 'assistant');
+            } else if (data.type === 'connection') {
+                console.log('Connected to session:', data.session_id);
+            }
+        }
+
+        function addMessageToUI(message, role, contextFiles = []) {
+            console.log(`💬 addMessageToUI called - role: ${role}, messageLength: ${message ? message.length : 0}`);
+            
+            // Try multiple ways to find the container
+            let messagesContainer = document.getElementById('messagesContainer');
+            if (!messagesContainer) {
+                messagesContainer = document.querySelector('.messages-container');
+            }
+            if (!messagesContainer) {
+                messagesContainer = document.querySelector('[id="messagesContainer"]');
+            }
+            
+            console.log('📦 Container found:', !!messagesContainer, 'by element:', messagesContainer ? messagesContainer.tagName : 'N/A');
+            console.log('📦 Container display:', messagesContainer ? window.getComputedStyle(messagesContainer).display : 'N/A');
+            console.log('📦 Container parent:', messagesContainer ? messagesContainer.parentElement.className : 'N/A');
+            
+            if (!messagesContainer) {
+                console.error('❌ Messages container not found!');
+                console.log('All containers with ID:', document.querySelectorAll('[id*="Container"]').length);
+                console.log('All .messages-container:', document.querySelectorAll('.messages-container').length);
+                return false;
+            }
+
+            try {
+                // Remove empty state if it exists
+                const emptyState = messagesContainer.querySelector('.empty-state');
+                if (emptyState) {
+                    console.log('🗑️ Removing empty state');
+                    emptyState.remove();
+                }
+
+                // Create message element
+                const messageEl = document.createElement('div');
+                messageEl.className = `message message-${role}`;
+                
+                const avatar = role === 'user' ? 'U' : '🤖';
+
+                let messageContentHTML = '';
+                
+                // Render markdown for assistant messages, plain text for user
+                if (role === 'assistant' && typeof markdownit !== 'undefined') {
+                    try {
+                        const md = window.md || new markdownit({
+                            html: false,
+                            breaks: true,
+                            typographer: true,
+                            highlight: function(str, lang) {
+                                if (lang && hljs) {
+                                    try {
+                                        return '<pre class="hljs"><code>' + hljs.highlight(str, { language: lang, ignoreIllegals: true }).value + '</code></pre>';
+                                    } catch (__) {}
+                                }
+                                return '<pre class="hljs"><code>' + escapeHtml(str) + '</code></pre>';
+                            }
+                        });
+                        window.md = md;
+                        const renderedMarkdown = md.render(message);
+                        messageContentHTML = `<div class="message-content markdown-content">${renderedMarkdown}</div>`;
+                        console.log('✅ Markdown rendered for assistant message');
+                    } catch (e) {
+                        console.error('Error rendering markdown:', e);
+                        messageContentHTML = `<div class="message-content">${escapeHtml(message)}</div>`;
+                    }
+                } else {
+                    // User messages - plain text with message-content class
+                    messageContentHTML = `<div class="message-content">${escapeHtml(message)}</div>`;
+                    console.log('✅ User message created');
+                }
+
+                let htmlContent = `
+                    <div class="message-avatar">${avatar}</div>
+                    <div>
+                        ${messageContentHTML}
+`;
+                
+                if (contextFiles && contextFiles.length > 0) {
+                    htmlContent += `
+                        <div class="context-files">
+                            <strong>Context from:</strong>
+                            ${contextFiles.map(f => `<span class="file-tag">${escapeHtml(f)}</span>`).join('')}
+                        </div>
+`;
+                }
+                
+                htmlContent += `
+                    </div>
+`;
+
+                messageEl.innerHTML = htmlContent;
+                
+                console.log('Message HTML created for role:', role);
+                console.log('Before append - container children:', messagesContainer.children.length);
+                
+                messagesContainer.appendChild(messageEl);
+                
+                // Highlight code blocks if hljs is available
+                if (window.hljs && role === 'assistant') {
+                    messageEl.querySelectorAll('pre code').forEach((block) => {
+                        hljs.highlightElement(block);
+                    });
+                }
+                
+                console.log('After append - container children:', messagesContainer.children.length);
+                
+                // Force a reflow to ensure the element is rendered
+                const h = messagesContainer.offsetHeight;
+                console.log('Reflow done, container height:', h);
+                
+                // Scroll to bottom immediately
+                messagesContainer.scrollTop = messagesContainer.scrollHeight;
+                console.log('✅ Message added successfully');
+                console.log('   Scroll position:', messagesContainer.scrollTop, '/', messagesContainer.scrollHeight);
+                console.log('   Message class:', messageEl.className);
+                console.log('   Message visible:', messageEl.offsetHeight > 0);
+                
+                return true;
+            } catch (e) {
+                console.error('❌ Error in addMessageToUI:', e);
+                console.error('Stack trace:', e.stack);
+                return false;
+            }
+        }
+
+        function showThinking() {
+            console.log('🤔 showThinking called');
+            
+            // Try multiple ways to find the container
+            let messagesContainer = document.getElementById('messagesContainer');
+            if (!messagesContainer) {
+                messagesContainer = document.querySelector('.messages-container');
+            }
+            console.log('📦 Container found:', !!messagesContainer);
+            
+            if (!messagesContainer) {
+                console.error('❌ Messages container not found for thinking message');
+                return;
+            }
+
+            try {
+                const messageEl = document.createElement('div');
+                messageEl.className = 'message message-assistant';
+                messageEl.id = 'thinking-message';
+
+                messageEl.innerHTML = `
+                    <div class="message-avatar">🤖</div>
+                    <div class="message-content">
+                        <div class="loading">
+                            <div class="loading-dot"></div>
+                            <div class="loading-dot"></div>
+                            <div class="loading-dot"></div>
+                        </div>
+                    </div>
+                `;
+
+                messagesContainer.appendChild(messageEl);
+                
+                // Force a reflow and scroll
+                void messagesContainer.offsetHeight;
+                messagesContainer.scrollTop = messagesContainer.scrollHeight;
+                console.log('✅ Thinking message added and scrolled');
+            } catch (e) {
+                console.error('❌ Error in showThinking:', e);
+            }
+        }
+
+        function removeTinkingMessage() {
+            console.log('removeTinkingMessage called');
+            const thinkingMsg = document.getElementById('thinking-message');
+            if (thinkingMsg) {
+                thinkingMsg.remove();
+                console.log('✅ Thinking message removed');
+            } else {
+                console.log('⚠️ Thinking message not found to remove');
+            }
+        }
+
+        function sendMessage() {
+            const inputField = document.querySelector('.input-field');
+            const message = inputField.value.trim();
+
+            if (!message) return;
+
+            // Clear input
+            inputField.value = '';
+
+            // Send via WebSocket
+            if (ws && ws.readyState === WebSocket.OPEN) {
+                ws.send(JSON.stringify({ message: message }));
+            }
+        }
+
+        function escapeHtml(text) {
+            const div = document.createElement('div');
+            div.textContent = text;
+            return div.innerHTML;
+        }
+
+        // Allow sending message with Enter key
+        document.addEventListener('keydown', function(event) {
+            if (event.key === 'Enter' && event.ctrlKey) {
+                sendMessage();
+            }
+        });
+    </script>
+
+    {% block extra_js %}{% endblock %}
+</body>
+</html>

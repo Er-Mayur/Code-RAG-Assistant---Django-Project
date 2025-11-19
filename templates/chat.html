@@ -1,0 +1,393 @@
+{% extends 'base.html' %}
+
+{% block title %}{{ session.title }} - Code RAG{% endblock %}
+
+{% block extra_css %}
+    <!-- Markdown rendering library -->
+    <script src="https://cdn.jsdelivr.net/npm/markdown-it@14/dist/markdown-it.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/highlight.js@11/dist/highlight.min.js"></script>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/highlight.js@11/styles/atom-one-dark.min.css">
+    <style>
+        .markdown-content {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+            line-height: 1.6;
+            color: var(--text-primary);
+            padding: 16px;
+        }
+        
+        .message-content.markdown-content {
+            background: var(--bg-light);
+            border-radius: 8px;
+            flex: 1;
+        }
+        
+        .message-assistant .message-content.markdown-content {
+            background: var(--bg-light);
+            border-left: 3px solid var(--primary);
+        }
+        
+        .markdown-content h1, .markdown-content h2, .markdown-content h3, 
+        .markdown-content h4, .markdown-content h5, .markdown-content h6 {
+            margin-top: 16px;
+            margin-bottom: 8px;
+            font-weight: 600;
+            border-bottom: none;
+        }
+        
+        .markdown-content h1 { font-size: 1.8em; }
+        .markdown-content h2 { font-size: 1.5em; }
+        .markdown-content h3 { font-size: 1.3em; }
+        .markdown-content h4 { font-size: 1.1em; }
+        .markdown-content h5 { font-size: 1em; }
+        .markdown-content h6 { font-size: 0.9em; }
+        
+        .markdown-content ul, .markdown-content ol {
+            margin: 8px 0;
+            padding-left: 24px;
+        }
+        
+        .markdown-content li {
+            margin: 4px 0;
+        }
+        
+        .markdown-content code {
+            background: rgba(255, 255, 255, 0.1);
+            padding: 2px 6px;
+            border-radius: 3px;
+            font-family: 'Courier New', monospace;
+            font-size: 0.9em;
+            color: #a6e22e;
+        }
+        
+        .markdown-content pre {
+            background: #0d0d0d;
+            border: 1px solid var(--border);
+            border-radius: 6px;
+            padding: 12px;
+            overflow-x: auto;
+            margin: 12px 0;
+        }
+        
+        .markdown-content pre code {
+            background: none;
+            padding: 0;
+            color: #f8f8f2;
+        }
+        
+        .markdown-content blockquote {
+            border-left: 4px solid var(--primary);
+            padding-left: 12px;
+            margin: 12px 0;
+            color: var(--text-secondary);
+            font-style: italic;
+        }
+        
+        .markdown-content table {
+            border-collapse: collapse;
+            width: 100%;
+            margin: 12px 0;
+        }
+        
+        .markdown-content table th,
+        .markdown-content table td {
+            border: 1px solid var(--border);
+            padding: 8px 12px;
+            text-align: left;
+        }
+        
+        .markdown-content table th {
+            background: var(--bg-light);
+            font-weight: 600;
+        }
+        
+        .markdown-content a {
+            color: var(--primary);
+            text-decoration: none;
+        }
+        
+        .markdown-content a:hover {
+            text-decoration: underline;
+        }
+        
+        .markdown-content p {
+            margin: 8px 0;
+        }
+    </style>
+{% endblock %}
+
+{% block sidebar %}
+    <div style="margin-top: 16px;">
+        <p style="font-size: 12px; text-transform: uppercase; color: var(--text-secondary); margin-bottom: 8px; font-weight: 500;">Chat History</p>
+        {% for sess in project.chat_sessions.all %}
+            <a href="{% url 'chat_session' sess.id %}" style="text-decoration: none;">
+                <div class="project-item {% if sess.id == session.id %}active{% endif %}">
+                    <div class="project-name">{{ sess.title|truncatewords:5 }}</div>
+                    <div class="project-meta">{{ sess.chat_messages.count }} messages</div>
+                </div>
+            </a>
+        {% endfor %}
+    </div>
+{% endblock %}
+
+{% block header_title %}
+    <div>
+        <a href="{% url 'project_detail' project.id %}" style="color: var(--text-secondary); text-decoration: none; font-size: 13px;">← {{ project.name }}</a>
+        <div style="margin-top: 4px;">{{ session.title }}</div>
+    </div>
+{% endblock %}
+
+{% block header_actions %}
+    <button class="btn btn-secondary" onclick="shareChat()">📤 Share</button>
+{% endblock %}
+
+{% block content %}
+<div class="messages-container" id="messagesContainer">
+    {% if messages %}
+        {% for message in messages %}
+            <div class="message message-user">
+                <div class="message-avatar">U</div>
+                <div class="message-content">{{ message.user_message }}</div>
+            </div>
+            
+            {% if message.assistant_response %}
+                <div class="message message-assistant">
+                    <div class="message-avatar">🤖</div>
+                    <div>
+                        <div class="message-content">{{ message.assistant_response }}</div>
+                        {% if message.context_files %}
+                            <div class="context-files">
+                                <strong>Context from:</strong>
+                                {% for file in message.context_files %}
+                                    <span class="file-tag">{{ file }}</span>
+                                {% endfor %}
+                            </div>
+                        {% endif %}
+                        <div class="message-meta">{{ message.created_at|date:'M d, H:i' }} • {{ message.response_time_ms }}ms</div>
+                    </div>
+                </div>
+            {% endif %}
+        {% endfor %}
+    {% else %}
+        <div class="empty-state">
+            <div class="empty-icon">💬</div>
+            <h2 style="font-size: 18px; color: var(--text-primary); margin-bottom: 8px;">Start your conversation</h2>
+            <p>Ask questions about your code and get AI-powered assistance</p>
+        </div>
+    {% endif %}
+</div>
+{% endblock %}
+
+{% block input_area %}
+<div class="input-area">
+    <div class="input-wrapper">
+        <input type="text" class="input-field" placeholder="Ask me about your code... (Ctrl+Enter to send)" id="messageInput">
+        <button class="send-btn" onclick="sendMessage()" id="sendBtn" title="Send message">
+            <span style="font-size: 18px;">⬆️</span>
+        </button>
+    </div>
+</div>
+
+<script>
+    // Get session ID safely
+    let sessionId = null;
+    
+    // Method 1: Extract from the template variable (this should work if view passes session)
+    const templateSessionId = '{{ session.id }}';
+    if (templateSessionId && templateSessionId !== '{{ session.id }}' && !templateSessionId.includes('{')) {
+        sessionId = parseInt(templateSessionId.trim());
+        console.log('✓ Session ID from template:', sessionId);
+    } else {
+        // Method 2: Extract from URL path
+        const urlParts = window.location.pathname.split('/').filter(p => p);
+        // Path is /chat/{id}/
+        if (urlParts.length >= 2 && urlParts[0] === 'chat') {
+            sessionId = parseInt(urlParts[1]);
+            console.log('⚠ Using session ID from URL:', sessionId);
+        }
+    }
+    
+    if (!sessionId || isNaN(sessionId)) {
+        console.error('❌ Could not determine session ID!');
+        console.error('Template value:', templateSessionId);
+        console.error('URL path:', window.location.pathname);
+    } else {
+        console.log('✓ Session ID ready:', sessionId);
+        // Connect to WebSocket - wait for base.html functions to load
+        if (typeof connectWebSocket === 'function') {
+            console.log('✓ connectWebSocket function found, connecting...');
+            connectWebSocket(sessionId);
+        } else {
+            console.log('⏳ connectWebSocket not ready yet, waiting...');
+            setTimeout(() => {
+                if (typeof connectWebSocket === 'function') {
+                    console.log('✓ connectWebSocket ready after wait, connecting...');
+                    connectWebSocket(sessionId);
+                } else {
+                    console.error('❌ connectWebSocket still not defined after wait');
+                }
+            }, 500);
+        }
+    }
+
+
+    // Update messages container reference for AJAX calls
+    function updateMessagesContainer() {
+        const container = document.getElementById('messagesContainer');
+        console.log('updateMessagesContainer - found container:', !!container);
+        if (container) {
+            const emptyState = container.querySelector('.empty-state');
+            if (emptyState) {
+                console.log('Found empty state, removing it');
+                emptyState.remove();
+            }
+        }
+    }
+
+    // Enhanced sendMessage function with fallback to HTTP
+    function sendMessage() {
+        console.log('===== SEND MESSAGE START =====');
+        const inputField = document.getElementById('messageInput');
+        const message = inputField.value.trim();
+
+        console.log('📝 Message text:', message);
+        console.log('🔗 WebSocket object exists:', !!ws);
+        console.log('🔗 WebSocket readyState:', ws ? ws.readyState : 'N/A', '(1=OPEN)');
+
+        if (!message) {
+            console.log('⚠️ Message is empty, returning');
+            return;
+        }
+
+        // Clear input field immediately
+        inputField.value = '';
+        inputField.focus();
+        console.log('✓ Input field cleared and focused');
+
+        // Verify functions exist before calling them
+        if (typeof addMessageToUI !== 'function') {
+            console.error('❌ addMessageToUI function not found!');
+            alert('Page not fully loaded. Please refresh and try again.');
+            inputField.value = message; // Restore message if function not found
+            return;
+        }
+
+        // Add user message to UI FIRST (before anything else)
+        console.log('📌 About to call addMessageToUI for user message:', message.substring(0, 50));
+        const userMsgAdded = addMessageToUI(message, 'user');
+        console.log('📌 addMessageToUI returned:', userMsgAdded);
+        
+        if (!userMsgAdded) {
+            console.error('❌ Failed to add user message to UI');
+            inputField.value = message; // Restore message if UI add failed
+            return;
+        }
+        console.log('✅ User message added to UI successfully');
+        
+        // Show thinking indicator
+        if (typeof showThinking === 'function') {
+            console.log('📌 Calling showThinking');
+            showThinking();
+        } else {
+            console.error('❌ showThinking function not found!');
+        }
+
+        console.log('🔗 ws readyState before send:', ws ? ws.readyState : 'null');
+
+        // Check if WebSocket is actually open
+        if (ws && ws.readyState === 1) { // 1 = OPEN
+            console.log('✅ Using WebSocket (OPEN)');
+            try {
+                ws.send(JSON.stringify({ message: message }));
+                console.log('✅ Message sent via WebSocket');
+            } catch (e) {
+                console.error('❌ Error sending via WebSocket:', e);
+                fallbackToHTTP(message);
+            }
+        } else {
+            console.log('⚠️ WebSocket not ready (readyState:', ws ? ws.readyState : 'null', '), using HTTP fallback');
+            fallbackToHTTP(message);
+        }
+        
+        console.log('===== SEND MESSAGE END =====');
+    }
+
+    function fallbackToHTTP(message) {
+        console.log('🌐 Starting HTTP fallback for message:', message);
+        console.log('📤 Fetching to: /api/sessions/' + sessionId + '/send_message/');
+        
+        fetch(`/api/sessions/${sessionId}/send_message/`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({ message: message })
+        })
+        .then(response => {
+            console.log('📥 HTTP Response status:', response.status);
+            if (!response.ok) {
+                throw new Error(`HTTP error! status: ${response.status}`);
+            }
+            return response.json();
+        })
+        .then(data => {
+            console.log('✅ HTTP Response data:', data);
+            if (typeof removeTinkingMessage === 'function') {
+                removeTinkingMessage();
+            }
+            if (data.assistant_response) {
+                console.log('📌 Adding assistant response to UI');
+                if (typeof addMessageToUI === 'function') {
+                    addMessageToUI(data.assistant_response, 'assistant', data.context_files);
+                }
+            } else if (data.error) {
+                console.error('❌ Error in response:', data.error);
+                if (typeof addMessageToUI === 'function') {
+                    addMessageToUI('Error: ' + data.error, 'assistant');
+                }
+            } else {
+                console.warn('⚠️ No response or error in data');
+                if (typeof addMessageToUI === 'function') {
+                    addMessageToUI('No response received', 'assistant');
+                }
+            }
+        })
+        .catch(error => {
+            console.error('❌ HTTP Fetch error:', error);
+            if (typeof removeTinkingMessage === 'function') {
+                removeTinkingMessage();
+            }
+            if (typeof addMessageToUI === 'function') {
+                addMessageToUI('Error sending message: ' + error.message, 'assistant');
+            }
+        });
+    }
+
+    function removeTinkingMessage() {
+        const thinkingMsg = document.getElementById('thinking-message');
+        if (thinkingMsg) {
+            thinkingMsg.remove();
+        }
+    }
+
+    function shareChat() {
+        const url = window.location.href;
+        if (navigator.share) {
+            navigator.share({
+                title: '{{ session.title }}',
+                text: 'Check out this chat',
+                url: url
+            });
+        } else {
+            alert('Chat URL: ' + url);
+        }
+    }
+
+    // Send on Enter key
+    document.getElementById('messageInput').addEventListener('keypress', function(e) {
+        if (e.key === 'Enter' && !e.shiftKey) {
+            e.preventDefault();
+            sendMessage();
+        }
+    });
+</script>
+{% endblock %}

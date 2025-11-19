@@ -1,0 +1,105 @@
+# .gitignore for Code RAG Assistant
+
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+build/
+develop-eggs/
+dist/
+downloads/
+eggs/
+.eggs/
+lib/
+lib64/
+parts/
+sdist/
+var/
+wheels/
+pip-wheel-metadata/
+share/python-wheels/
+*.egg-info/
+.installed.cfg
+*.egg
+MANIFEST
+
+# Virtual environments
+venv/
+ENV/
+env/
+.venv
+
+# Django
+*.log
+local_settings.py
+db.sqlite3
+db.sqlite3-journal
+/media
+/staticfiles
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+.DS_Store
+
+# Environment
+.env
+.env.local
+.env.*.local
+
+# Project specific
+vector_stores/
+temp_files/
+*.db
+.coverage
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Docker
+.docker/
+docker-compose.override.yml
+Dockerfile
+docker-compose.yml
+
+# Node (if using frontend build tools)
+node_modules/
+npm-debug.log
+yarn-error.log
+
+# Documentation files (keeping only README.md)
+ARCHITECTURE.md
+CHANGES_DETAILED.md
+COMPLETION_CHECKLIST.md
+COMPLETION_SUMMARY.md
+DOCUMENTATION_INDEX.md
+FEATURES_IMPLEMENTED.md
+FIX_SUMMARY.txt
+IMPLEMENTATION_SUMMARY.md
+INDEX.md
+LLM_RESPONSE_FIX.md
+PROJECT_CODE_EXPLANATION.md
+PROJECT_CREATION_RAG_FIX.md
+PROJECT_MANIFEST.md
+PROJECT_SUMMARY.md
+PROJECT_VISUAL_DIAGRAMS.md
+QUICKSTART_RAG_FIX.md
+QUICKSTART.md
+RAG_FIX_REPORT.md
+RAG_QUALITY_FIX.md
+RAG_SYSTEM_FIXED.md
+USAGE_EXAMPLES.md
+VERIFICATION_CHECKLIST.md
+
+# Test files
+test_*.py
+diagnose.py
+
+# Setup scripts
+setup.sh
